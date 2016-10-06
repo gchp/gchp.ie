@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /keybase.txt
+Disallow: /google41bb658a9ce559ab.html

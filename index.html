@@ -1,0 +1,15 @@
+---
+layout: default
+---
+
+<div class="home">
+
+  <p>
+  Hey, I'm Greg - welcome to my blog! This is where I occasionally write about my journey through the world of software development. Usually I'll write about tech I'm interested in, problems I encounter or things I'm working on. You can see the full list of posts below, or check out the <a href="/about/" title="more about me">about page</a> to find out more about me!
+  </p>
+
+  {% include post-list.html posts=site.posts %}
+
+  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+
+</div>

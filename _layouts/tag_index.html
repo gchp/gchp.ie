@@ -1,0 +1,23 @@
+---
+layout: default
+---
+
+
+<div class="home">
+
+  <p>
+  This page contains all the articles that I've tagged with <strong>{{ page.tag }}</strong>. If you don't see anything that interests you here, check out the <a href="/" title="Home page">home page</a> for a full list of articles I've written.
+  </p>
+
+  {% if site.data.projects[page.tag] %}
+  <p>
+  For more information on <strong>{{page.tag | capitalize }}</strong> check out the <a href="/projects/{{ page.tag }}">project page</a>.
+  </p>
+  {% endif %}
+
+  {% assign posts=site.tags[page.tag] %}
+  {% include post-list.html posts=posts %}
+
+  <p class="rss-subscribe">subscribe to posts in this category <a href="/tags/{{ page.tag }}/atom.xml">via RSS</a></p>
+
+</div>

@@ -1,0 +1,11 @@
+<table style="margin-bottom: 20px;">
+	{% for post in include.posts %}
+	<tr>
+		<td class="post-table-date">{{ post.date | date: "%b %d, %Y" }}</td>
+		<td class="post-table-link">
+			<a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+
