@@ -91,6 +91,15 @@ The output of `phase_1_parse_input` is an `ast::Crate` which is defined in
 [`src/libsyntax/ast.rs` on line 434][crate_def]. This, as far as I can tell
 at the moment is the parsed representation of the input. TODO: come back to this....
 
+## Lexing
+
+There are two main steps in the majority of parsers. There's the conversion of
+characters in a source file to some kind of token, and then the parsing of those
+tokens to a specifc set of rules. The Rust compiler is no different in this sense.
+There is a lexer, and a parser. Both the lexing & parsing steps are combined in
+the `phase_1_parse_input` compilation step, but I'll cover them separately here
+as there's quite a bit to it all.
+
 ## Parsing
 
 Now that we have some idea of our inputs and outputs for the parsing phase,
@@ -160,6 +169,21 @@ A `TokenTree` is an enum which can be one of three variants
 
 ### Parser
 
+This type, as the name would suggest, handles all the parsing & also lexing of
+our source code.
+
+The definition can be found in [`src/libsyntax/parse/parser.rs` lines 242-279][parser_def]
+
+Going back to the [`parse_crate_from_file`][pc_from_file] function we see a call
+out to a function called `new_parser_from_file`. This function starts us down the
+road of working with many of the above mentioned types.
+
+First, we create a new filemap from the file we are trying to compile. Then, we
+convert the FileMap to a list of TokenTrees. This process in turn creates a new
+Parser which uses a StringReader to lex all the tokens from the source file, and
+parse them into the TokenTrees. We then create a new token tree reader which is
+used to create another Parser instance which is then used to begin the actual parsing.
+
 
 [series]: /tags/compiler-walkthrough/
 [intro]: /2016/08/09/rust-compiler-walkthrough-introduction/
@@ -179,3 +203,4 @@ A `TokenTree` is an enum which can be one of three variants
 [codemap_doc]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax/codemap.rs#L11-L18
 [filemap_def]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax_pos/lib.rs#L292-L308
 [span_doc]:  https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax_pos/lib.rs#L46-53
+[parser_def]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax/parse/parser.rs#L242-L279
