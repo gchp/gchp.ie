@@ -33,6 +33,28 @@ rustc 1.12.0-nightly (080e0e072 2016-08-08)
 For me, the nightly was build from commit `080e0e072`. This may be different
 on your system.
 
+----
+
+
+```
+Parsing overview
+    parse_crate_from_file
+        new_parser_from_file
+            file_to_filemap
+                sess.codemap().load_file(path)
+            filemap_to_parser
+                filemap_to_stream
+                    StringReader::new
+                      .real_token
+                      .parse_all_token_trees
+                stream_to_parser
+                    Parser::new
+        parser.parse_crate_mod
+```
+
+
+---
+
 Now that that's taken care of, let's get to it. As I mentioned above we are
 going to be looking at the parsing phase of the compilation process.
 
@@ -41,13 +63,76 @@ function [here][parse_invoc]. Let's look at the [signature of this function
 ][p1_sig]:
 
 ``` rust
-pub fn phase_1_parse_input<'a>(sess: &'a Session,
-                               cfg: ast::CrateConfig,
-                               input: &Input)
+pub fn phase_1_parse_input<'a>(sess: &'a Session, input: &Input)
                                 -> PResult<'a, ast::Crate> {
 ```
 
-So, `phase_1_parse_input` takes three arguments and returns some sort of result
+So, `phase_1_parse_input` takes two arguments and returns some sort of result
+which if successful will contain something called `ast::Crate`. We'll come to
+this later.
+
+At a high level, the steps involved in parsing our input are:
+
+* Convert our source file to a FileMap
+* Convert the FileMap to a Parser
+    * Create a StringReader (lexer)
+    * Tokenize our source - into a TokenStream
+    * Create a Parser from a TokenStream
+* Parse the input
+
+These are the steps we will be covering in this article.
+
+In `phase_1_parse_input` we enter a match expression on the `Input` for the
+compiler. For us in this case the match expression [lands on line
+487][parser_call] which calls the `parse_crate_from_file` function in
+[`src/libsyntax/parse/mod.rs`][pc_from_file].  This function takes the file
+path we want to compile, the `CrateConfig` object, and the `ParseSess` object
+from the compilation session.
+
+We then begin stepping through the steps mentioned above.
+
+## Converting source file to FileMap
+
+The first step is converting our input into a FileMap. We first step into
+`new_parser_from_file` which in turn calls `file_to_filemap`:
+
+```rust
+/// Given a session and a path and an optional span (for error reporting),
+/// add the path to the session's codemap and return the new filemap.
+fn file_to_filemap(sess: &ParseSess, path: &Path, spanopt: Option<Span>)
+                   -> Rc<FileMap> {
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+---
+
+
+Now that that's taken care of, let's get to it. As I mentioned above we are
+going to be looking at the parsing phase of the compilation process.
+
+The parsing phase is initiated through a call to the `phase_1_parse_input`
+function [here][parse_invoc]. Let's look at the [signature of this function
+][p1_sig]:
+
+``` rust
+pub fn phase_1_parse_input<'a>(sess: &'a Session, input: &Input)
+                                -> PResult<'a, ast::Crate> {
+```
+
+So, `phase_1_parse_input` takes two arguments and returns some sort of result
 which if successful will contain something called `ast::Crate`. We'll come to
 this later. First, let's look at the inputs.
 
@@ -76,7 +161,7 @@ pub type CrateConfig = Vec<P<MetaItem>>;
 
 Right now, I don't have much more to add to this. `CrateConfig` is used to drive
 conditional compilation. We're not doing any conditional compilation in our
-small programme, so I doubt we will come across this much in the series.
+small program, so I doubt we will come across this much in the series.
 
 The final input to `phase_1_parse_input` is the actual input to the compiler in
 the form of an enum called `Input` which can be found in
@@ -89,26 +174,20 @@ coming from a file, so the input argument for us is `Input::File(path)` where
 
 The output of `phase_1_parse_input` is an `ast::Crate` which is defined in
 [`src/libsyntax/ast.rs` on line 434][crate_def]. This, as far as I can tell
-at the moment is the parsed representation of the input. TODO: come back to this....
+at the moment is the parsed representation of the input.
+
+TODO: come back to this....
 
 ## Lexing
-
-There are two main steps in the majority of parsers. There's the conversion of
-characters in a source file to some kind of token, and then the parsing of those
-tokens to a specifc set of rules. The Rust compiler is no different in this sense.
-There is a lexer, and a parser. Both the lexing & parsing steps are combined in
-the `phase_1_parse_input` compilation step, but I'll cover them separately here
-as there's quite a bit to it all.
-
-## Parsing
 
 Now that we have some idea of our inputs and outputs for the parsing phase,
 let's get to the actual parsing. Back in `phase_1_parse_input` we enter a match
 expression on the `Input` for the compiler. For us in this case the match
 expression [lands on line 487][parser_call] which calls the
-`parse_crate_from_file` function in [`src/libsyntax/parse/mod.rs`][pc_from_file].
-This function takes the file path we want to compile, the
-`CrateConfig` object, and the `ParseSess` object from the compilation session.
+`parse_crate_from_file` function in
+[`src/libsyntax/parse/mod.rs`][pc_from_file].  This function takes the file
+path we want to compile, the `CrateConfig` object, and the `ParseSess` object
+from the compilation session.
 
 The first thing this function does is start to create a parser. Before that
 can happen however, there are some pre-requisites. In order to construct a
@@ -184,6 +263,17 @@ Parser which uses a StringReader to lex all the tokens from the source file, and
 parse them into the TokenTrees. We then create a new token tree reader which is
 used to create another Parser instance which is then used to begin the actual parsing.
 
+### StringReader
+
+The [`StringReader`][strdr_def] is the lexer. This is the interface which
+consumes the raw source input and converts it to a series of Tokens & Spans in
+a TokenStream.
+
+
+
+
+
+
 
 [series]: /tags/compiler-walkthrough/
 [intro]: /2016/08/09/rust-compiler-walkthrough-introduction/
@@ -204,3 +294,4 @@ used to create another Parser instance which is then used to begin the actual pa
 [filemap_def]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax_pos/lib.rs#L292-L308
 [span_doc]:  https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax_pos/lib.rs#L46-53
 [parser_def]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax/parse/parser.rs#L242-L279
+[strdr_def]: https://github.com/rust-lang/rust/blob/080e0e072f9c654893839cf1f7ea71dc153b08a9/src/libsyntax/parse/lexer/mod.rs#L41-L69
